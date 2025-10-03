@@ -1,0 +1,14 @@
+/.gradle
+/build
+/out
+/.idea
+*.iml
+*.log
+*.class
+*.jar
+*.war
+*.ear
+/node_modules
+/.vscode
+application.properties
+application.yml
