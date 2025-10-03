@@ -32,40 +32,48 @@ Es necesario configurar:
    ```bash
    git clone https://github.com/tu-usuario/btg-fondos-back.git
 
-   📌 Backend (Spring Boot) - Guía de Despliegue
-Requisitos
+AWSTemplateFormatVersion: '2010-09-09'
+Description: Infraestructura para el despliegue de la aplicación BTG Fondos (Back-End)
 
-Java 17 o superior instalado en el servidor.
+Parameters:
+  KeyName:
+    Description: Nombre del Key Pair para acceder vía SSH a la instancia EC2
+    Type: AWS::EC2::KeyPair::KeyName
+    Default: btg-fondos-key   # Key Pair creado en EC2
 
-Gradle configurado en el proyecto.
+Resources:
+  ApplicationEC2Instance:
+    Type: AWS::EC2::Instance
+    Properties:
+      InstanceType: t3.micro
+      KeyName: !Ref KeyName
+      ImageId: ami-0c55b159cbfafe1f0   # Amazon Linux 2 en us-east-2
+      SecurityGroupIds:
+        - !Ref ApplicationSecurityGroup
+      UserData:
+        Fn::Base64: !Sub |
+          #!/bin/bash
+          yum update -y
+          yum install -y java-17-amazon-corretto
+          aws s3 cp s3://btg-fondos-artifacts/fondos-0.0.1-SNAPSHOT.jar /home/ec2-user/fondos.jar
+          java -jar /home/ec2-user/fondos.jar --server.port=8081 > /home/ec2-user/app.log 2>&1 &
 
-Instancia EC2 en AWS o servidor Linux disponible.
+  ApplicationSecurityGroup:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupDescription: Security group for BTG Fondos back-end
+      SecurityGroupIngress:
+        - IpProtocol: tcp
+          FromPort: 22
+          ToPort: 22
+          CidrIp: 0.0.0.0/0
+        - IpProtocol: tcp
+          FromPort: 8081
+          ToPort: 8081
+          CidrIp: 0.0.0.0/0
 
-Pasos
+Outputs:
+  ApplicationURL:
+    Description: URL de la aplicación desplegada
+    Value: !Sub "http://${ApplicationEC2Instance.PublicDnsName}:8081"
 
-Construir el proyecto
-
-./gradlew clean build -x test
-
-
-Esto genera el archivo JAR en:
-
-build/libs/fondos-0.0.1-SNAPSHOT.jar
-
-
-Copiar el JAR al servidor
-Desde tu máquina local:
-
-scp -i "tu-clave.pem" build/libs/fondos-0.0.1-SNAPSHOT.jar ubuntu@<IP_EC2>:/home/ubuntu/app.jar
-
-
-Ejecutar la aplicación en el servidor
-
-cd /home/ubuntu
-java -jar app.jar --server.port=8081
-
-
-Probar el backend
-Accede desde el navegador o Postman:
-
-http://<IP_EC2>:8081/funds/history/1
