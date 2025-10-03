@@ -31,3 +31,41 @@ Es necesario configurar:
 1. Clonar el repositorio
    ```bash
    git clone https://github.com/tu-usuario/btg-fondos-back.git
+
+   📌 Backend (Spring Boot) - Guía de Despliegue
+Requisitos
+
+Java 17 o superior instalado en el servidor.
+
+Gradle configurado en el proyecto.
+
+Instancia EC2 en AWS o servidor Linux disponible.
+
+Pasos
+
+Construir el proyecto
+
+./gradlew clean build -x test
+
+
+Esto genera el archivo JAR en:
+
+build/libs/fondos-0.0.1-SNAPSHOT.jar
+
+
+Copiar el JAR al servidor
+Desde tu máquina local:
+
+scp -i "tu-clave.pem" build/libs/fondos-0.0.1-SNAPSHOT.jar ubuntu@<IP_EC2>:/home/ubuntu/app.jar
+
+
+Ejecutar la aplicación en el servidor
+
+cd /home/ubuntu
+java -jar app.jar --server.port=8081
+
+
+Probar el backend
+Accede desde el navegador o Postman:
+
+http://<IP_EC2>:8081/funds/history/1
